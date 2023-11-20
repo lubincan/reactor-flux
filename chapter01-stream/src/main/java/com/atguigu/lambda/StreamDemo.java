@@ -1,4 +1,4 @@
-package com.atguiggu.lambda;
+package com.atguigu.lambda;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -15,6 +15,44 @@ import java.util.stream.Stream;
  */
 public class StreamDemo {
 
+    private static String[] buffer = new String[1];
+
+    public static void main(String[] args) {
+        StreamDemo demo = new StreamDemo();
+        System.out.println("1111");
+        demo.a();
+
+
+        //b要消费数据
+        new Thread(() -> {
+            demo.b("aaa"); //b也可以进行失败重试
+        }).start();
+
+        System.out.println("2222");
+
+
+    }
+
+
+    public void a() {
+        String a = "aaaa";
+        System.out.println("a做完事....");
+        buffer[0] = a; //消息队列
+
+        //引入一个缓存区，引入消息队列，就能实现全系统、全异步、不阻塞、不等待、实时响应
+    }
+
+
+    public void b(String arg) {
+        arg = buffer[0];
+        try {
+
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        System.out.println("哈哈：" + arg);
+    }
 
     @NoArgsConstructor
     @AllArgsConstructor
@@ -34,21 +72,39 @@ public class StreamDemo {
                 new Person("王 七", "女", 33),
                 new Person("雷 二", "女", 18));
 
-        Map<String, List<Person>> collect = list.stream()
-                .filter(s -> s.age > 15)
-                .collect(Collectors.groupingBy(t -> t.gender));
+        //迭代器模式；
+        for (Person person : list) {
+            //1、迭代速度取决于数据量
+            //2、数据还得有容器缓存
+        }
+
+        //背压：
+        //正压：正向压力：数据的生产者给消费者压力；
+//        list.stream()
+//                .filter(a->{
+//                    System.out.println("aaaa");
+//                })
+
+
+        //数据是自流动的，而不是靠迭代被动流动；
+        //推拉模型：
+        //推：流模式；上游有数据，自动推给下游；
+        //拉：迭代器；自己遍历，自己拉取；
+        Map<String, List<Person>> collect =
+                list.stream()
+                        .parallel()
+                        .filter(s -> s.age > 15)
+                        .collect(Collectors.groupingBy(t -> t.gender));
 
 
         //Flow
-
-
         System.out.println(collect);
 
 
     }
 
 
-    public static void main(String[] args) {
+    public static void mainbbbb(String[] args) {
 
         List<Person> list = List.of(
                 new Person("雷 丰阳", "男", 16),
@@ -116,10 +172,7 @@ public class StreamDemo {
         System.out.println(collect1);
 
 
-
-
         //filter、map、flatMap、takeWhile.....
-
 
 
     }

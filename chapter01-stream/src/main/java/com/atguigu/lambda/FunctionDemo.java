@@ -1,4 +1,4 @@
-package com.atguiggu.lambda;
+package com.atguigu.lambda;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
