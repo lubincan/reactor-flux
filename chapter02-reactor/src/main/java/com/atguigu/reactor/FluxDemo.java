@@ -1,14 +1,20 @@
 package com.atguigu.reactor;
 
 import org.reactivestreams.Subscription;
-import reactor.core.Disposables;
-import reactor.core.publisher.BaseSubscriber;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.core.publisher.SignalType;
+import reactor.core.Disposable;
+import reactor.core.publisher.*;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.time.Duration;
+import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author lfy
@@ -22,11 +28,11 @@ public class FluxDemo {
 //                .subscribe(System.out::println);
 
 
-        Flux.range(1,7)
+        Flux.range(1, 7)
 //                .log() //日志   onNext(1~7)
-                .filter(i -> i>3) //挑出>3的元素
+                .filter(i -> i > 3) //挑出>3的元素
 //                .log() //onNext(4~7)
-                .map(i-> "haha-"+i)
+                .map(i -> "haha-" + i)
                 .log()  // onNext(haha-4 ~ 7)
                 .subscribe(System.out::println);
 
@@ -39,17 +45,17 @@ public class FluxDemo {
      * 响应式编程核心：看懂文档弹珠图；
      * 信号： 正常/异常（取消）
      * SignalType：
-     *     SUBSCRIBE： 被订阅
-     *     REQUEST：  请求了N个元素
-     *     CANCEL： 流被取消
-     *     ON_SUBSCRIBE：在订阅时候
-     *     ON_NEXT： 在元素到达
-     *     ON_ERROR： 在流错误
-     *     ON_COMPLETE：在流正常完成时
-     *     AFTER_TERMINATE：中断以后
-     *     CURRENT_CONTEXT：当前上下文
-     *     ON_CONTEXT：感知上下文
-     *
+     * SUBSCRIBE： 被订阅
+     * REQUEST：  请求了N个元素
+     * CANCEL： 流被取消
+     * ON_SUBSCRIBE：在订阅时候
+     * ON_NEXT： 在元素到达
+     * ON_ERROR： 在流错误
+     * ON_COMPLETE：在流正常完成时
+     * AFTER_TERMINATE：中断以后
+     * CURRENT_CONTEXT：当前上下文
+     * ON_CONTEXT：感知上下文
+     * <p>
      * doOnXxx API触发时机
      * 1、doOnNext：每个数据（流的数据）到达的时候触发
      * 2、doOnEach：每个元素（流的数据和信号）到达的时候触发
@@ -59,23 +65,24 @@ public class FluxDemo {
      * 6、doOnTerminate： 发送取消/异常信号中断了流
      * 7、doOnCancle： 流被取消
      * 8、doOnDiscard：流中元素被忽略的时候
+     *
      * @param args
      */
     public void doOnXxxx(String[] args) {
 
         // 关键：doOnNext：表示流中某个元素到达以后触发我一个回调
         // doOnXxx要感知某个流的事件，写在这个流的后面，新流的前面
-        Flux.just(1,2,3,4,5,6,7,0,5,6)
-                .doOnNext(integer -> System.out.println("元素到达："+integer)) //元素到达得到时候触发
+        Flux.just(1, 2, 3, 4, 5, 6, 7, 0, 5, 6)
+                .doOnNext(integer -> System.out.println("元素到达：" + integer)) //元素到达得到时候触发
                 .doOnEach(integerSignal -> { //each封装的详细
-                    System.out.println("doOnEach.."+integerSignal);
+                    System.out.println("doOnEach.." + integerSignal);
                 })//1,2,3,4,5,6,7,0
-                .map(integer -> 10/integer) //10,5,3,
+                .map(integer -> 10 / integer) //10,5,3,
                 .doOnError(throwable -> {
-                    System.out.println("数据库已经保存了异常："+throwable.getMessage());
+                    System.out.println("数据库已经保存了异常：" + throwable.getMessage());
                 })
-                .map(integer -> 100/integer)
-                .doOnNext(integer -> System.out.println("元素到哈："+integer))
+                .map(integer -> 100 / integer)
+                .doOnNext(integer -> System.out.println("元素到哈：" + integer))
 
                 .subscribe(System.out::println);
     }
@@ -117,8 +124,8 @@ public class FluxDemo {
                 System.out.println("元素到达：" + value);
                 if (value < 5) {
                     request(1);
-                    if(value == 3) {
-                        int i = 10/0;
+                    if (value == 3) {
+                        int i = 10 / 0;
                     }
                 } else {
                     cancel();//取消订阅
