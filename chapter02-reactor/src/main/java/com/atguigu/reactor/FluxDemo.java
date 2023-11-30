@@ -45,26 +45,26 @@ public class FluxDemo {
      * 响应式编程核心：看懂文档弹珠图；
      * 信号： 正常/异常（取消）
      * SignalType：
-     * SUBSCRIBE： 被订阅
-     * REQUEST：  请求了N个元素
-     * CANCEL： 流被取消
-     * ON_SUBSCRIBE：在订阅时候
-     * ON_NEXT： 在元素到达
-     * ON_ERROR： 在流错误
-     * ON_COMPLETE：在流正常完成时
-     * AFTER_TERMINATE：中断以后
-     * CURRENT_CONTEXT：当前上下文
-     * ON_CONTEXT：感知上下文
+     *      SUBSCRIBE： 被订阅
+     *      REQUEST：  请求了N个元素
+     *      CANCEL： 流被取消
+     *      ON_SUBSCRIBE：在订阅时候
+     *      ON_NEXT： 在元素到达
+     *      ON_ERROR： 在流错误
+     *      ON_COMPLETE：在流正常完成时
+     *      AFTER_TERMINATE：中断以后
+     *      CURRENT_CONTEXT：当前上下文
+     *      ON_CONTEXT：感知上下文
      * <p>
      * doOnXxx API触发时机
-     * 1、doOnNext：每个数据（流的数据）到达的时候触发
-     * 2、doOnEach：每个元素（流的数据和信号）到达的时候触发
-     * 3、doOnRequest： 消费者请求流元素的时候
-     * 4、doOnError：流发生错误
-     * 5、doOnSubscribe: 流被订阅的时候
-     * 6、doOnTerminate： 发送取消/异常信号中断了流
-     * 7、doOnCancle： 流被取消
-     * 8、doOnDiscard：流中元素被忽略的时候
+     *      1、doOnNext：每个数据（流的数据）到达的时候触发
+     *      2、doOnEach：每个元素（流的数据和信号）到达的时候触发
+     *      3、doOnRequest： 消费者请求流元素的时候
+     *      4、doOnError：流发生错误
+     *      5、doOnSubscribe: 流被订阅的时候
+     *      6、doOnTerminate： 发送取消/异常信号中断了流
+     *      7、doOnCancle： 流被取消
+     *      8、doOnDiscard：流中元素被忽略的时候
      *
      * @param args
      */
