@@ -22,6 +22,15 @@ import java.util.stream.Stream;
 public class APITest {
 
 
+    @Test
+    void next(){
+
+        Integer block = Flux.just(1, 2, 3)
+                .next()
+                .block();
+        System.out.println(block);
+    }
+
     //Context-API： https://projectreactor.io/docs/core/release/reference/#context
     @Test //ThreadLocal在响应式编程中无法使用。
     //响应式中，数据流期间共享数据，Context API: Context：读写 ContextView：只读；
@@ -265,8 +274,8 @@ public class APITest {
 
 
           map.//onErrorStop： 错误后停止流. 源头中断，所有监听者全部结束; 错误结束
-                 onErrorComplete() //把错误结束信号，替换为正常结束信号； 正常结束
-                .subscribe(v-> System.out.println("v = " + v),
+//                 onErrorComplete() //把错误结束信号，替换为正常结束信号； 正常结束
+                subscribe(v-> System.out.println("v = " + v),
                         err-> System.out.println("err = " + err),
                         ()-> System.out.println("流正常结束"));
 
