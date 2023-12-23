@@ -21,4 +21,6 @@ public interface BookRepostory extends R2dbcRepository<TBook,Long> {
             " LEFT JOIN t_author t on b.author_id = t.id " +
             " WHERE b.id = :bookId")
     Mono<TBook> hahaBook(@Param("bookId")Long bookId);
+
+
 }

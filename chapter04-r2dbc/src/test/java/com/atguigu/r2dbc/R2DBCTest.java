@@ -32,6 +32,12 @@ import java.util.Arrays;
  */
 public class R2DBCTest {
 
+    //最佳实践：  提升生产效率的做法
+        //1、Spring Data R2DBC，基础的CRUD用 R2dbcRepository 提供好了
+        //2、自定义复杂的SQL（单表）： @Query；
+        //3、多表查询复杂结果集： DatabaseClient 自定义SQL及结果封装；
+
+
     //Spring Data 提供的两个核心底层组件
 
     @Autowired  // join查询不好做； 单表查询用
