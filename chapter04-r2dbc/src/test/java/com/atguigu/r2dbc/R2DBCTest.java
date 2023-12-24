@@ -3,6 +3,7 @@ package com.atguigu.r2dbc;
 import com.atguigu.r2dbc.entity.TAuthor;
 import com.atguigu.r2dbc.entity.TBook;
 import com.atguigu.r2dbc.repositories.AuthorRepositories;
+import com.atguigu.r2dbc.repositories.BookAuthorRepostory;
 import com.atguigu.r2dbc.repositories.BookRepostory;
 import io.asyncer.r2dbc.mysql.MySqlConnectionConfiguration;
 import io.asyncer.r2dbc.mysql.MySqlConnectionFactory;
@@ -22,6 +23,9 @@ import reactor.core.publisher.Mono;
 import java.beans.Transient;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 
 @SpringBootTest
@@ -33,9 +37,9 @@ import java.util.Arrays;
 public class R2DBCTest {
 
     //最佳实践：  提升生产效率的做法
-        //1、Spring Data R2DBC，基础的CRUD用 R2dbcRepository 提供好了
-        //2、自定义复杂的SQL（单表）： @Query；
-        //3、多表查询复杂结果集： DatabaseClient 自定义SQL及结果封装；
+    //1、Spring Data R2DBC，基础的CRUD用 R2dbcRepository 提供好了
+    //2、自定义复杂的SQL（单表）： @Query；
+    //3、多表查询复杂结果集： DatabaseClient 自定义SQL及结果封装；
 
 
     //Spring Data 提供的两个核心底层组件
@@ -55,7 +59,84 @@ public class R2DBCTest {
     BookRepostory bookRepostory;
 
     @Autowired
+    BookAuthorRepostory bookAuthorRepostory;
+
+    @Autowired
     R2dbcCustomConversions r2dbcCustomConversions;
+
+
+    @Test
+    void oneToN() throws IOException {
+
+//        databaseClient.sql("select a.id aid,a.name,b.* from t_author a  " +
+//                "left join t_book b on a.id = b.author_id " +
+//                "order by a.id")
+//                .fetch()
+//                .all(row -> {
+//
+//                })
+
+
+        // 1~6
+        // 1：false 2：false 3:false 4: true 8:true 5:false 6:false 7:false 8:true 9:false 10:false
+        // [1,2,3]
+        // [4,8]
+        // [5,6,7]
+        // [8]
+        // [9,10]
+        // bufferUntilChanged：
+        // 如果下一个判定值比起上一个发生了变化就开一个新buffer保存，如果没有变化就保存到原buffer中
+
+//        Flux.just(1,2,3,4,8,5,6,7,8,9,10)
+//                .bufferUntilChanged(integer -> integer%4==0 )
+//                .subscribe(list-> System.out.println("list = " + list));
+        ; //自带分组
+
+
+        Flux<TAuthor> flux = databaseClient.sql("select a.id aid,a.name,b.* from t_author a  " +
+                        "left join t_book b on a.id = b.author_id " +
+                        "order by a.id")
+                .fetch()
+                .all()
+                .bufferUntilChanged(rowMap -> Long.parseLong(rowMap.get("aid").toString()))
+                .map(list -> {
+                    TAuthor tAuthor = new TAuthor();
+                    Map<String, Object> map = list.get(0);
+                    tAuthor.setId(Long.parseLong(map.get("aid").toString()));
+                    tAuthor.setName(map.get("name").toString());
+                    //查到的所有图书
+                    List<TBook> tBooks = list.stream()
+                            .map(ele -> {
+                                TBook tBook = new TBook();
+
+                                tBook.setId(Long.parseLong(ele.get("id").toString()));
+                                tBook.setAuthorId(Long.parseLong(ele.get("author_id").toString()));
+                                tBook.setTitle(ele.get("title").toString());
+                                return tBook;
+                            })
+                            .collect(Collectors.toList());
+
+                    tAuthor.setBooks(tBooks);
+                    return tAuthor;
+                });//Long 数字缓存 -127 - 127；// 对象比较需要自己写好equals方法
+
+
+
+        flux.subscribe(tAuthor -> System.out.println("tAuthor = " + tAuthor));
+
+        System.in.read();
+
+
+    }
+
+
+    @Test
+    void author() throws IOException {
+        authorRepositories.findById(1L)
+                .subscribe(tAuthor -> System.out.println("tAuthor = " + tAuthor));
+
+        System.in.read();
+    }
 
     @Test
     void book() throws IOException {
@@ -71,12 +152,25 @@ public class R2DBCTest {
 //                });
 
 
-        //1-1： 第一种方式
-        bookRepostory.hahaBook(1L)
-                .subscribe(tBook -> System.out.println("tBook = " + tBook));
+        //1-1： 第一种方式:  自定义转换器封装
+//        bookRepostory.hahaBook(1L)
+//                .subscribe(tBook -> System.out.println("tBook = " + tBook));
 
 
+        //自定义转换器  Converter<Row, TBook> ： 把数据库的row转成 TBook； 所有TBook的结果封装都用这个
+        //工作时机： Spring Data 发现方法签名只要是返回 TBook。 利用自定义转换器进行工作
 
+        //对以前的CRUD产生影响; 错误：Column name 'name' does not exist
+        //解决办法：
+        //  1）、新VO+新的Repository+自定义类型转化器
+        //  2）、自定义类型转化器 多写判断。兼容更多表类型
+        System.out.println("bookRepostory.findById(1L).block() = "
+                + bookRepostory.findById(1L).block());
+
+        System.out.println("================");
+
+        System.out.println("bookAuthorRepostory.hahaBook(1L).block() = " + bookAuthorRepostory.hahaBook(1L)
+                .block());
         //1-1：第二种方式
 //        databaseClient.sql("select b.*,t.name as name from t_book b " +
 //                        "LEFT JOIN t_author t on b.author_id = t.id " +
@@ -161,7 +255,7 @@ public class R2DBCTest {
                     System.out.println("map = " + map);
                     String id = map.get("id").toString();
                     String name = map.get("name").toString();
-                    return new TAuthor(Long.parseLong(id), name);
+                    return new TAuthor(Long.parseLong(id), name, null);
                 })
                 .subscribe(tAuthor -> System.out.println("tAuthor = " + tAuthor));
         System.in.read();
@@ -232,7 +326,7 @@ public class R2DBCTest {
                     return result.map(readable -> {
                         Long id = readable.get("id", Long.class);
                         String name = readable.get("name", String.class);
-                        return new TAuthor(id, name);
+                        return new TAuthor(id, name, null);
                     });
                 })
                 .subscribe(tAuthor -> System.out.println("tAuthor = " + tAuthor))
